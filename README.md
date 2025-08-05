@@ -1,69 +1,81 @@
-# React + TypeScript + Vite
+# 🗺️ Map Layer Manager App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A simple web application to manage polygon layers on an interactive MapTiler basemap, built using **Maplibre + MapTiler SDK**, **Zustand** for state management, and **Axios** for future API integration.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## Expanding the ESLint configuration
+- ✅ Interactive base map using MapTiler SDK  
+- ✍️ Draw polygons directly on the map  
+- 📚 Create multiple layers to group shapes  
+- 👁️ Toggle visibility of individual layers  
+- ⚙️ Global state management with Zustand  
+- 🔗 Axios setup for future backend integration  
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠️ Tech Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- [React](https://reactjs.org/)
+- [Maptiler SDK](https://www.maptiler.com/maps/sdk/)
+- [Zustand](https://zustand-demo.pmnd.rs/)
+- [Maplibre GL](https://maplibre.org/)
+- [MapBox Draw](https://github.com/mapbox/mapbox-gl-draw)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 📦 Setup Instructions
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/snarkar-aiq/sample-map-build.git
+cd map-layer-manager
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Install dependencies
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+# or
+yarn
 ```
+
+### 3. Add MapTiler API key
+
+Create a `.env` file:
+
+```
+VITE_MAPTILER_API_KEY=your_maptiler_api_key
+```
+
+### 4. Run the app
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+---
+
+## 📁 Project Structure
+
+```bash
+/src
+│
+├── components/
+|   ├── ui (Consists of ShadCN components.)
+│   ├── MapView.tsx         # Maptiler map with draw tool
+│
+├── store/
+│   └── useMapStore.ts      # Zustand store for map layers
+│
+├── lib/
+    └── utils.ts
+│
+├── App.tsx                 # Main app with layer manager and map
+└── index.tsx               # Entry point
+```
+
