@@ -16,6 +16,7 @@ interface MapState {
   addLayer: (name: string) => void;
   toggleLayer: (id: string) => void;
   addFeatureToLayer: (layerId: string, feature: GeoJSON.Feature) => void;
+  removeLayer: (id: string) => void;
 }
 
 export const useMapStore = create<MapState>((set) => ({
