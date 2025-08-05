@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "@maptiler/sdk/dist/maptiler-sdk.css";
@@ -11,71 +13,66 @@ export const MapView: React.FC = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const drawRef = useRef<MapboxDraw | null>(null);
 
-  const { activeLayerId, layers, addFeatureToLayer } = useMapStore();
+  // Subscribe to Zustand store for layers
+  const layers = useMapStore((state) => state.layers);
 
   // 🗺️ Initialize map and drawing once
   useEffect(() => {
-    if (!mapRef.current) {
-      const map = new maplibregl.Map({
-        container: "map",
-        style: `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`,
-        center: [72.8777, 19.076],
-        zoom: 10,
-      });
+    const map = new maplibregl.Map({
+      container: "map",
+      style: `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`,
+      center: [72.8777, 19.076],
+      zoom: 10,
+    });
 
-      mapRef.current = map;
+    mapRef.current = map;
 
-      const draw = new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {}, // no default buttons
-      });
+    const draw = new MapboxDraw({
+      displayControlsDefault: false,
+      controls: {},
+    });
+    drawRef.current = draw;
+    map.addControl(draw as any);
 
-      drawRef.current = draw;
-      map.addControl(draw as any);
+    map.on('draw.create', (e) => {
+      // Get fresh state inside handler
+      const { activeLayerId, addFeatureToLayer } = useMapStore.getState();
 
-      map.on('draw.create', (e) => {
-  if (!activeLayerId) {
-    alert('Please create and select a layer first.');
-    drawRef.current?.deleteAll();
-    return;
-  }
+      if (!activeLayerId) {
+        alert('Please create and select a layer first.');
+        drawRef.current?.deleteAll();
+        return;
+      }
 
-  const feature = e.features?.[0];
+      const feature = e.features?.[0];
+      if (!feature || !feature.geometry?.type) {
+        console.error('Invalid feature drawn:', feature);
+        return;
+      }
 
-  if (!feature || !feature.geometry || !feature.geometry.type) {
-    console.error('Invalid feature drawn:', feature);
-    return;
-  }
-
-  addFeatureToLayer(activeLayerId, feature);
-});
-
-    }
+      addFeatureToLayer(activeLayerId, feature);
+    });
 
     return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
+      map.remove();
     };
-  }, [activeLayerId, addFeatureToLayer]);
+  }, []);
 
   // 👁️ Render only visible layers' features
   useEffect(() => {
-    if (drawRef.current) {
-      drawRef.current.deleteAll();
-      console.log(layers.filter((layer) => layer.visible).flatMap((layer) => layer.features).flat());
-      // Clear existing features
-      // Add features from visible
-      const featureCollection: GeoJSON.FeatureCollection = {
-          type: "FeatureCollection",
-          features: [layers.filter((layer) => layer.visible).flatMap((layer) => layer.features)].flat() // Flatten the array of features,
-        };
-      layers
-        .filter((layer) => layer.visible)
-        .forEach((layer) => {
-          if (layer.features && layer.features.length > 0) {
-            drawRef.current!.add(featureCollection);
-          }
-        });
+    if (!drawRef.current) return;
+
+    drawRef.current.deleteAll();
+
+    const visibleFeatures = layers
+      .filter((layer) => layer.visible)
+      .flatMap((layer) => layer.features || []);
+
+    if (visibleFeatures.length) {
+      drawRef.current.add({
+        type: "FeatureCollection",
+        features: visibleFeatures,
+      });
     }
   }, [layers]);
 

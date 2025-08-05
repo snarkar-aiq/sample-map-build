@@ -1,72 +1,10 @@
-// // /src/App.tsx
-// import React, { useState } from 'react';
-// import { MapView } from './components/MapView';
-// import { useMapStore } from './store/useMapStore';
 
-// function App() {
-//   const { layers, addLayer, setActiveLayer, toggleLayer, activeLayerId } = useMapStore();
-//   const [layerName, setLayerName] = useState('');
-
-//   return (
-//     <div className="flex">
-//       <div className="w-64 p-4 bg-gray-100 space-y-2">
-//         <h2 className="font-bold text-lg">Layers</h2>
-//         <input
-//           type="text"
-//           value={layerName}
-//           onChange={(e) => setLayerName(e.target.value)}
-//           placeholder="New Layer Name"
-//           className="border px-2 py-1 w-full"
-//         />
-//         <button
-//           className="bg-blue-500 text-white px-2 py-1 w-full"
-//           onClick={() => {
-//             if (layerName.trim()) {
-//               addLayer(layerName);
-//               setLayerName('');
-//             }
-//           }}
-//         >
-//           Add Layer
-//         </button>
-
-//         <ul>
-//           {layers.map((layer) => (
-//             <li key={layer.id} className="flex justify-between items-center py-1">
-//               <button
-//                 className={`text-left ${layer.id === activeLayerId ? 'font-bold text-blue-600' : ''
-//                   }`}
-//                 onClick={() => setActiveLayer(layer.id)}
-//               >
-//                 {layer.name}
-//               </button>
-
-//               <input
-//                 type="checkbox"
-//                 checked={layer.visible}
-//                 onChange={() => toggleLayer(layer.id)}
-//               />
-//             </li>
-//           ))}
-//         </ul>
-//       </div>
-
-//       <div className="flex-1">
-//         <MapView />
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default App;
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { MapView } from "./components/MapView";
 import { useMapStore } from "./store/useMapStore";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -86,6 +24,14 @@ function App() {
               value={layerName}
               onChange={(e) => setLayerName(e.target.value)}
               placeholder="New Layer Name"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && layerName.trim()) {
+                  addLayer(layerName);
+                  setLayerName("");
+                }
+
+              }}
+
             />
             <Button
               onClick={() => {
@@ -94,7 +40,7 @@ function App() {
                   setLayerName("");
                 }
               }}
-              className="w-full"
+              className="w-full font-bold"
             >
               Add Layer
             </Button>
