@@ -4,6 +4,8 @@ import "@maptiler/sdk/dist/maptiler-sdk.css";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { useMapStore } from "@/store/useMapStore";
+import jsPDF from "jspdf";
+import { Button } from "./ui/button";
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 
@@ -13,7 +15,38 @@ export const MapView: React.FC = () => {
 
   // get layers from Zustand
   const layers = useMapStore((s) => s.layers);
+  const handleExport = () => {
+    // Grab the MapLibre GL canvas directly to avoid html2canvas limitations
+    mapRef.current?.redraw();
+    let lastIdleDataURL = "";
+    let mapCanvas = mapRef.current?.getCanvas();
+    if (!mapCanvas) {
+      console.error("Map canvas not found");
+      return;
+    }
+    const originalToDataURL = mapCanvas.toDataURL.bind(mapCanvas);
+    // Convert canvas to image data
+    console.log(mapCanvas)
+    const imgData = mapCanvas.toDataURL('image/png');
+    mapCanvas.toDataURL = function () {
 
+      return lastIdleDataURL;
+    }
+    // Waiting for the next moment, just after redraw,
+    // when the GPU will not be computing a new frame
+    // When the map is idle, we get the dataURL to be stored for later.
+    // Note how we are using the "originalToDataURL" function,
+    // since it's the one that does the actual frame grabbing
+    mapRef.current?.on("idle", async () => {
+      lastIdleDataURL = originalToDataURL();
+    });
+    // Create PDF
+    const pdf = new jsPDF({ orientation: 'landscape' });
+    const width = pdf.internal.pageSize.getWidth();
+    const height = pdf.internal.pageSize.getHeight();
+    pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+    pdf.save('map.pdf');
+  };
   useEffect(() => {
     const map = new maplibregl.Map({
       container: "map",
@@ -173,8 +206,8 @@ export const MapView: React.FC = () => {
       .flatMap((l) =>
         (l.features || []).map((f) => ({
           ...f,
-          properties: { 
-            ...f.properties, 
+          properties: {
+            ...f.properties,
             user_color: l.color // Use user_color instead of color for consistency
           }
         }))
@@ -198,6 +231,9 @@ export const MapView: React.FC = () => {
       >
         ✍️ Draw Polygon
       </button>
+      <Button onClick={handleExport} className="absolute top-4 right-4 bg-white border px-4 py-2 shadow-md z-10 cursor-pointer text-black">
+        Export Map to PDF
+      </Button>
     </div>
   );
 };

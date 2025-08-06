@@ -1,4 +1,3 @@
-// src/App.tsx
 import { useState } from "react";
 import { MapView } from "./components/MapView";
 import { useMapStore } from "./store/useMapStore";
@@ -8,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ColorPicker } from "./components/ui/color-picker";
+import jsPDF from 'jspdf';
 
 function App() {
   const {
@@ -25,10 +25,11 @@ function App() {
 
   const handleAdd = () => {
     if (!layerName.trim()) return;
-    // pass color into addLayer
     addLayer(layerName.trim(), newLayerColor);
     setLayerName("");
   };
+
+
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -47,10 +48,10 @@ function App() {
                   if (e.key === "Enter") handleAdd();
                 }}
               />
-             <ColorPicker
+              <ColorPicker
                 value={newLayerColor}
                 onChange={(value) => setNewLayerColor(value as any)}
-             />
+              />
             </div>
 
             <Button onClick={handleAdd} className="w-full font-bold">
@@ -68,7 +69,6 @@ function App() {
                     onClick={() => setActiveLayer(layer.id)}
                   >
                     <div className="flex items-center space-x-2">
-                      {/* Inline color picker for updating layer color */}
                       <input
                         type="color"
                         value={layer.color}
@@ -101,6 +101,9 @@ function App() {
                 ))}
               </div>
             </ScrollArea>
+
+            {/* Export Button */}
+           
           </CardContent>
         </Card>
       </div>
