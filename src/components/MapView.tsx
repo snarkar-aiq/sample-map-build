@@ -39,10 +39,10 @@ export const MapView: React.FC = () => {
             "case",
             ["has", "user_color"],
             ["get", "user_color"],
-            "#D20C0C" // fallback color
+            "#aeaeae" // fallback color
           ],
           "line-dasharray": [0.2, 2],
-          "line-width": 2
+          "line-width": 3
         }
       },
       // polygon fill - using data-driven styling
@@ -55,15 +55,15 @@ export const MapView: React.FC = () => {
             "case",
             ["has", "user_color"],
             ["get", "user_color"],
-            "#D20C0C" // fallback color
+            "#aeaeae" // fallback color
           ],
           "fill-outline-color": [
             "case",
             ["has", "user_color"],
             ["get", "user_color"],
-            "#D20C0C" // fallback color
+            "#aeaeae" // fallback color
           ],
-          "fill-opacity": 0.1
+          "fill-opacity": 0.4
         }
       },
       // polygon mid points
@@ -92,10 +92,10 @@ export const MapView: React.FC = () => {
             "case",
             ["has", "user_color"],
             ["get", "user_color"],
-            "#D20C0C" // fallback color
+            "#aeaeae" // fallback color
           ],
           "line-dasharray": [0.2, 2],
-          "line-width": 2
+          "line-width": 3
         }
       },
       // vertex point halos
@@ -119,7 +119,7 @@ export const MapView: React.FC = () => {
             "case",
             ["has", "user_color"],
             ["get", "user_color"],
-            "#D20C0C" // fallback color
+            "#aeaeae" // fallback color
           ],
         }
       }
@@ -192,8 +192,9 @@ export const MapView: React.FC = () => {
     <div className="relative h-screen w-full">
       <div id="map" className="h-full w-full" />
       <button
-        className="absolute top-4 left-4 bg-white border px-4 py-2 shadow-md z-10"
+        className="absolute top-4 left-4 bg-white border px-4 py-2 shadow-md z-10 cursor-pointer"
         onClick={() => drawRef.current?.changeMode("draw_polygon")}
+
       >
         ✍️ Draw Polygon
       </button>
