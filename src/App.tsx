@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ColorPicker } from "./components/ui/color-picker";
 
 function App() {
   const {
@@ -46,13 +47,10 @@ function App() {
                   if (e.key === "Enter") handleAdd();
                 }}
               />
-              <input
-                type="color"
+             <ColorPicker
                 value={newLayerColor}
-                onChange={(e) => setNewLayerColor(e.target.value)}
-                title="Choose layer color"
-                className="w-10 h-10 p-0 border rounded"
-              />
+                onChange={(value) => setNewLayerColor(value as any)}
+             />
             </div>
 
             <Button onClick={handleAdd} className="w-full font-bold">
