@@ -19,6 +19,7 @@ interface MapState {
   setLayerColor: (id: string, color: string) => void;
   addFeatureToLayer: (layerId: string, feature: GeoJSON.Feature) => void;
   removeLayer: (id: string) => void;
+  setLayerVisibility: (id: string, visible: boolean) => void;
 }
 
 const randomColor = () => {
@@ -84,6 +85,12 @@ export const useMapStore = create<MapState>((set, get) => ({
         ),
       };
     }),
+  setLayerVisibility: (id:string, visible:boolean) =>
+    set((state) => ({
+      layers: state.layers.map((layer) =>
+        layer.id === id ? { ...layer, visible } : layer
+      ),
+    })),
 
   removeLayer: (id: string) =>
     set((state) => ({

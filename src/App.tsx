@@ -7,7 +7,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ColorPicker } from "./components/ui/color-picker";
-import jsPDF from 'jspdf';
 
 function App() {
   const {
@@ -29,6 +28,7 @@ function App() {
     setLayerName("");
   };
 
+  
 
 
   return (
@@ -103,7 +103,7 @@ function App() {
             </ScrollArea>
 
             {/* Export Button */}
-           
+            
           </CardContent>
         </Card>
       </div>
