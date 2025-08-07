@@ -4,6 +4,8 @@ import "@maptiler/sdk/dist/maptiler-sdk.css";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { useMapStore } from "@/store/useMapStore";
+import jsPDF from "jspdf";
+import { Button } from "./ui/button";
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 
@@ -13,6 +15,130 @@ export const MapView: React.FC = () => {
 
   // get layers from Zustand
   const layers = useMapStore((s) => s.layers);
+  const handleExport = () => {
+    // Grab the MapLibre GL canvas directly to avoid html2canvas limitations
+    mapRef.current?.redraw();
+    let lastIdleDataURL = "";
+    let mapCanvas = mapRef.current?.getCanvas();
+    if (!mapCanvas) {
+      console.error("Map canvas not found");
+      return;
+    }
+    const originalToDataURL = mapCanvas.toDataURL.bind(mapCanvas);
+    // Convert canvas to image data
+    console.log(mapCanvas)
+    const imgData = mapCanvas.toDataURL('image/png');
+    mapCanvas.toDataURL = function () {
+
+      return lastIdleDataURL;
+    }
+    // Waiting for the next moment, just after redraw,
+    // when the GPU will not be computing a new frame
+    // When the map is idle, we get the dataURL to be stored for later.
+    // Note how we are using the "originalToDataURL" function,
+    // since it's the one that does the actual frame grabbing
+    mapRef.current?.on("idle", async () => {
+      lastIdleDataURL = originalToDataURL();
+    });
+    // Create PDF
+    const pdf = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    // Calculate cover dimensions
+    const img = new Image();
+    img.src = imgData;
+    img.onload = () => {
+      const imgWidth = img.width;
+      const imgHeight = img.height;
+      const scale = Math.max(pageWidth / imgWidth, pageHeight / imgHeight);
+      const renderWidth = imgWidth * scale;
+      const renderHeight = imgHeight * scale;
+      const xOffset = (pageWidth - renderWidth) / 2;
+      const yOffset = (pageHeight - renderHeight) / 2;
+
+      // Add image covering the page
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, renderWidth, renderHeight);
+      pdf.save('map.pdf');
+    }
+  };
+
+
+  const exportActiveLayerToPDF = async () => {
+    const {
+      layers,
+      activeLayerId,
+      setLayerVisibility,
+    } = useMapStore.getState();
+
+    if (!activeLayerId) {
+      alert("No active layer selected");
+      return;
+    }
+
+    // Step 1: Save visibility state and hide all other layers
+    const originalVisibility = layers.map((layer) => ({
+      id: layer.id,
+      visible: layer.visible,
+    }));
+
+    for (const layer of layers) {
+      if (layer.id !== activeLayerId && layer.visible) {
+        setLayerVisibility(layer.id, false); // hide non-active layers
+      }
+    }
+
+    // Wait one frame to ensure map updates
+    await new Promise((res) => setTimeout(res, 400)).then(()=>{
+      mapRef.current?.redraw()
+    });
+    // Step 2: Export canvas
+    
+    let lastIdleDataURL = "";
+    let mapCanvas = mapRef.current?.getCanvas();
+    if (!mapCanvas) {
+      console.error("Map canvas not found");
+      return;
+    }
+    const originalToDataURL = mapCanvas.toDataURL.bind(mapCanvas);
+    // Convert canvas to image data
+
+    const imgData = mapCanvas.toDataURL('image/png');
+    mapCanvas.toDataURL = function () {
+      return lastIdleDataURL;
+    }
+
+    mapRef.current?.on("idle", async () => {
+      lastIdleDataURL = originalToDataURL();
+    });
+    const pdf = new jsPDF({ orientation: "landscape" });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const img = new Image();
+    img.src = imgData;
+    img.onload = () => {
+      const imgWidth = img.width;
+      const imgHeight = img.height;
+      const scale = Math.max(pageWidth / imgWidth, pageHeight / imgHeight);
+      const renderWidth = imgWidth * scale;
+      const renderHeight = imgHeight * scale;
+      const xOffset = (pageWidth - renderWidth) / 2;
+      const yOffset = (pageHeight - renderHeight) / 2;
+
+      // Add image covering the page
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, renderWidth, renderHeight);
+      pdf.save('map.pdf');
+
+      // Step 3: Restore original visibility
+      for (const layer of originalVisibility) {
+        setLayerVisibility(layer.id, layer.visible);
+      }
+    };
+  };
+
+
 
   useEffect(() => {
     const map = new maplibregl.Map({
@@ -173,8 +299,8 @@ export const MapView: React.FC = () => {
       .flatMap((l) =>
         (l.features || []).map((f) => ({
           ...f,
-          properties: { 
-            ...f.properties, 
+          properties: {
+            ...f.properties,
             user_color: l.color // Use user_color instead of color for consistency
           }
         }))
@@ -198,6 +324,17 @@ export const MapView: React.FC = () => {
       >
         ✍️ Draw Polygon
       </button>
+      <Button onClick={handleExport} className="absolute top-4 right-4 border px-4 py-2 shadow-md z-10 cursor-pointer ">
+        Export Map to PDF
+      </Button>
+
+      <Button
+        onClick={exportActiveLayerToPDF}
+        className="absolute top-20 right-4 border px-4 py-2 shadow-md z-10 cursor-pointer"
+      >
+        Export Active Layer to PDF
+      </Button>
+
     </div>
   );
 };
