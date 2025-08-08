@@ -89,11 +89,11 @@ export const MapView: React.FC = () => {
     }
 
     // Wait one frame to ensure map updates
-    await new Promise((res) => setTimeout(res, 400)).then(()=>{
+    await new Promise((res) => setTimeout(res, 400)).then(() => {
       mapRef.current?.redraw()
     });
     // Step 2: Export canvas
-    
+
     let lastIdleDataURL = "";
     let mapCanvas = mapRef.current?.getCanvas();
     if (!mapCanvas) {
@@ -139,15 +139,17 @@ export const MapView: React.FC = () => {
   };
 
 
-
   useEffect(() => {
     const map = new maplibregl.Map({
       container: "map",
-      style: `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`,
+      style: `https://api.maptiler.com/maps/outdoor/style.json?key=${MAPTILER_KEY}`,
       center: [72.8777, 19.076],
-      zoom: 10,
+      zoom: 15.5,
+      pitch: 45,
+      bearing: -17.6,
     });
     mapRef.current = map;
+
 
     // --- custom draw styles with dynamic colors ----
     const drawStyles: any[] = [
@@ -255,10 +257,62 @@ export const MapView: React.FC = () => {
       displayControlsDefault: false,
       controls: {},
       userProperties: true,
-      styles: drawStyles
+      styles: drawStyles,
+
     });
     drawRef.current = draw;
     map.addControl(draw as any);
+    // map.on('load', function () {
+    //   // Insert the layer beneath any symbol layer.
+    //   const layers = map.getStyle().layers;
+
+    //   let labelLayerId;
+    //   for (let i = 0; i < layers.length; i++) {
+    //     if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+    //       labelLayerId = layers[i].id;
+    //       break;
+    //     }
+    //   }
+
+    //   map.addLayer(
+    //     {
+    //       "id": "3d-buildings",
+    //       "source": "openmaptiles",
+    //       "source-layer": "building",
+    //       "type": "fill-extrusion",
+    //       "paint": {
+    //         "fill-extrusion-color": [
+    //           "interpolate",
+    //           ["linear"],
+    //           ["get", "render_height"],
+    //           0,
+    //           "#de8500ff",
+    //           200,
+    //           "#de0000ff",
+    //           400,
+    //           "#ff7772ff",
+    //         ],
+    //         "fill-extrusion-height": [
+    //           "interpolate",
+    //           ["linear"],
+    //           ["zoom"],
+    //           15,
+    //           0,
+    //           16,
+    //           ["get", "render_height"],
+    //         ],
+    //         "fill-extrusion-base": [
+    //           "case",
+    //           [">=", ["get", "zoom"], 1240],
+    //           ["get", "render_min_height"],
+    //           0,
+    //         ],
+    //       },
+    //     },
+    //     labelLayerId
+    //   );
+    // });
+
 
     map.on("draw.create", (e) => {
       const { activeLayerId, addFeatureToLayer, layers: allLayers } =
@@ -288,6 +342,27 @@ export const MapView: React.FC = () => {
       map.remove();
     };
   }, []);
+  let cnt = 0;
+  useEffect(() => {
+    fetch("http://localhost:8000/gee-tiles")
+      .then(res => res.json())
+      .then(data => {
+        if (!mapRef.current) return;
+        mapRef.current.addSource('gee-layer', {
+          type: 'raster',
+          tiles: [data.tile_url],
+          tileSize: 512
+        });
+
+        mapRef.current.addLayer({
+          id: `gee-layer-${cnt++}`,
+          type: 'raster',
+          source: 'gee-layer',
+          paint: { 'raster-opacity': 0.6 }
+        });
+      });
+  }, []);
+
 
   // whenever the layer list changes, re-draw all visible features
   useEffect(() => {
@@ -338,3 +413,4 @@ export const MapView: React.FC = () => {
     </div>
   );
 };
+
