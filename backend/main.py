@@ -1,8 +1,8 @@
-# fastapi_gee_tiles.py
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import ee
+from typing import Optional
 from google.oauth2 import service_account
 import logging
 
@@ -46,7 +46,7 @@ except Exception as e:
     logger.exception("Failed to initialize Earth Engine: %s", e)
     # Don't raise here — endpoints will return an error describing the init failure.
 
-@app.get("/gee-tiles")
+@app.get("/gee-tiles-hybrid")
 def get_gee_tiles():
     """
     Returns a tile URL template for the JAXA ALOS AW3D30 DSM dataset.
@@ -99,3 +99,68 @@ def get_gee_tiles():
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the GEE Tile Service!"}
+
+DATASETS = {
+    "alos_dsm": {
+        "collection": "JAXA/ALOS/AW3D30/V4_1",
+        "band": "DSM",
+        "vis_params": {
+            "min": 0,
+            "max": 5000,
+            "palette": ['0000ff', '00ffff', 'ffff00', 'ff0000', 'ffffff'],
+        }
+    },
+    "srtm": {
+        "collection": "USGS/SRTMGL1_003",
+        "band": "elevation",
+        "vis_params": {
+            "min": 0,
+            "max": 3000,
+            "palette": ['006633', 'e6f2ff', 'ffcc99', '996600'],
+        }
+    },
+    "landsat8_rgb": {
+        "collection": "LANDSAT/LC08/C01/T1_SR",
+        "bands": ["B4", "B3", "B2"],  # Red, Green, Blue
+        "vis_params": {
+            "min": 0,
+            "max": 3000,
+        }
+    },
+}
+
+@app.get("/gee-tiles")
+def get_gee_tiles(dataset: Optional[str] = "alos_dsm"):
+    """
+    Returns a tile URL template for the chosen dataset.
+    """
+    if dataset not in DATASETS:
+        raise HTTPException(status_code=400, detail=f"Unsupported dataset '{dataset}'. Available: {list(DATASETS.keys())}")
+
+    ds = DATASETS[dataset]
+
+    try:
+        # Load collection and mosaic into single image
+        collection = ee.ImageCollection(ds["collection"])
+        image = collection.mosaic()
+
+        # Select bands
+        if "bands" in ds:
+            image = image.select(ds["bands"])
+        elif "band" in ds:
+            image = image.select(ds["band"])
+
+        # Get map info
+        map_info = image.getMapId(ds["vis_params"])
+        mapid = map_info.get("mapid")
+        token = map_info.get("token", "")
+
+        if not mapid:
+            raise RuntimeError(f"No mapid returned from GEE. map_info={map_info}")
+
+        tile_url = f"https://earthengine.googleapis.com/v1/{mapid}/tiles/{{z}}/{{x}}/{{y}}"
+        return {"dataset": dataset, "map_info": map_info, "tile_url": tile_url}
+
+    except Exception as exc:
+        logger.exception("Failed to build GEE tile URL: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Failed to generate GEE tiles: {exc}")
